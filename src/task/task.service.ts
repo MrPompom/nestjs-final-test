@@ -1,22 +1,48 @@
-import { Injectable, NotImplementedException } from '@nestjs/common';
+import {
+    HttpException,
+    HttpStatus,
+    Injectable,
+    NotImplementedException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Task, TaskDocument } from './task.shema';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class TaskService {
-    constructor() {}
+    constructor(
+        @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
+    ) {}
 
-    addTask(name: string, userId: string, priority: number): Promise<void> {
-        throw new NotImplementedException();
+    async addTask(
+        name: string,
+        userId: string,
+        priority: number,
+    ): Promise<Task> {
+        if (!name || !userId || priority <= 0) {
+            throw new HttpException(
+                'Invalid task data',
+                HttpStatus.BAD_REQUEST,
+            );
+        }
+        const newTask = new this.taskModel({ name, userId, priority });
+
+        return newTask.save();
     }
 
-    getTaskByName(name: string): Promise<unknown> {
-        throw new NotImplementedException();
+    async getTaskByName(name: string): Promise<Task> {
+        const payload = await this.taskModel.findOne({ name }).exec();
+        if (!payload) {
+            throw new HttpException('Task not found', HttpStatus.NOT_FOUND);
+        }
+        return payload
     }
 
-    getUserTasks(userId: string): Promise<unknown[]> {
-        throw new NotImplementedException();
+    async getUserTasks(userId: string): Promise<Task[]> {
+        return await this.taskModel.find({ userId }).exec();
     }
 
-    resetData(): Promise<void> {
-        throw new NotImplementedException();
+    async resetData() {
+        await this.taskModel.deleteMany({});
     }
 }
