@@ -2,16 +2,17 @@ import {
     HttpException,
     HttpStatus,
     Injectable,
-    NotImplementedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Task, TaskDocument } from './task.shema';
 import { Model } from 'mongoose';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class TaskService {
     constructor(
         @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
+        private readonly userService: UserService
     ) {}
 
     async addTask(
@@ -38,9 +39,24 @@ export class TaskService {
         return payload
     }
 
-    async getUserTasks(userId: string): Promise<Task[]> {
-        return await this.taskModel.find({ userId }).exec();
+    async getUserTasks(userId: string): Promise<Task[] | null> {
+        try {
+            await this.userService.getUserById(userId);
+    
+            const response = await this.taskModel.find({ userId }).exec();
+    
+            const userTasks = response.map((task) => ({
+                id: task._id,
+                name: task.name,
+                userId: task.userId,
+                priority: task.priority,
+            }));
+            return userTasks;
+        } catch (error) {
+            throw new HttpException('User not found', HttpStatus.BAD_REQUEST);
+        }
     }
+    
 
     async resetData() {
         await this.taskModel.deleteMany({});
