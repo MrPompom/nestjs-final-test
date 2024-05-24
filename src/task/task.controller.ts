@@ -17,8 +17,7 @@ export class TaskController {
 
     @Get('/user/:userId')
     async getUserTasks(@Param('userId') userId: string) {
-        const tasks = await this.taskService.getUserTasks(userId);
-        return tasks;
+        return this.taskService.getUserTasks(userId);
     }
 
     @Delete('/reset')

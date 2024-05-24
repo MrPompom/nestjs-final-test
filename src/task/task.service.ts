@@ -46,7 +46,7 @@ export class TaskService {
             const response = await this.taskModel.find({ userId }).exec();
     
             const userTasks = response.map((task) => ({
-                id: task._id,
+                id: task.id,
                 name: task.name,
                 userId: task.userId,
                 priority: task.priority,
